@@ -1,5 +1,6 @@
 import 'package:climateinsight/screens/home.dart';
 import 'package:climateinsight/services/location_provider.dart';
+import 'package:climateinsight/services/weather_service_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -16,6 +17,9 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(
           create: (context) => LocationProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => WeatherServiceProvider(),
         )
       ],
       child: MaterialApp(
