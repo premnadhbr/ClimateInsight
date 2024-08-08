@@ -28,6 +28,7 @@ class MyApp extends StatelessWidget {
             appBarTheme: const AppBarTheme(backgroundColor: Colors.transparent),
             iconButtonTheme: const IconButtonThemeData(
                 style: ButtonStyle(
+                    // ignore: deprecated_member_use
                     iconColor: MaterialStatePropertyAll(Colors.white)))),
         home: const HomePage(),
       ),

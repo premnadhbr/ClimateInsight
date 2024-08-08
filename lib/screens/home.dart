@@ -2,6 +2,7 @@ import 'package:climateinsight/data/image_path.dart';
 import 'package:climateinsight/services/location_provider.dart';
 import 'package:climateinsight/services/weather_service_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
@@ -16,21 +17,53 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
-    Provider.of<LocationProvider>(context, listen: false).determineLocation();
-    Provider.of<WeatherServiceProvider>(context, listen: false)
-        .fetchWeatherDataByCity("dubai");
+    final locationProvider =
+        Provider.of<LocationProvider>(context, listen: false);
+
+    locationProvider.determineLocation().then((_) {
+      var city = locationProvider.currentLocationName!.locality;
+      if (city != null) {
+        Provider.of<WeatherServiceProvider>(context, listen: false)
+            .fetchWeatherDataByCity(city);
+      }
+    });
+
     super.initState();
+  }
+
+  TextEditingController cityController = TextEditingController();
+
+  @override
+  void dispose() {
+    super.dispose();
+    cityController.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final weatherProvider =
+        Provider.of<WeatherServiceProvider>(context, listen: false);
 
-    final locationProvider = Provider.of<LocationProvider>(context);
+    // Ensure weather data is not null before accessing its properties
+    final weather = weatherProvider.weather;
+    final weatherDetails = weather?.weather?.first;
+    final mainWeather = weather?.main;
+    final sys = weather?.sys;
 
-    List backgroundImages = background.values.toList();
+    // Get the sunrise and sunset timestamps from the API response, default to 0 if null
+    int sunriseTimestamp = sys?.sunrise ?? 0;
+    int sunsetTimestamp = sys?.sunset ?? 0;
 
-    List climateimage = imagePath.values.toList();
+    // Convert the timestamp to a DateTime object
+    DateTime sunriseDateTime =
+        DateTime.fromMillisecondsSinceEpoch(sunriseTimestamp * 1000);
+    DateTime sunsetDateTime =
+        DateTime.fromMillisecondsSinceEpoch(sunsetTimestamp * 1000);
+
+    // Format the sunrise and sunset times as strings
+    String formattedSunrise = DateFormat.Hm().format(sunriseDateTime);
+    String formattedSunset = DateFormat.Hm().format(sunsetDateTime);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -42,7 +75,12 @@ class _HomePageState extends State<HomePage> {
         width: size.width,
         decoration: BoxDecoration(
           image: DecorationImage(
-              image: AssetImage(backgroundImages[4]), fit: BoxFit.cover),
+              image: AssetImage(
+                background[
+                        weatherProvider.weather!.weather![0].main.toString()] ??
+                    "assets/img/clear.png",
+              ),
+              fit: BoxFit.cover),
         ),
         child: Stack(
           children: [
@@ -54,10 +92,12 @@ class _HomePageState extends State<HomePage> {
                 child: SizedBox(
                   height: 45,
                   child: TextFormField(
+                    controller: cityController,
                     decoration: InputDecoration(
                       suffixIcon: IconButton(
                         onPressed: () {
-                          print("button clicked");
+                          weatherProvider
+                              .fetchWeatherDataByCity(cityController.text);
                         },
                         icon: const Icon(
                           Icons.search,
@@ -140,34 +180,44 @@ class _HomePageState extends State<HomePage> {
             Align(
               alignment: const Alignment(0, -0.7),
               child: Image.asset(
-                climateimage[5],
+                imagePath[
+                        weatherProvider.weather!.weather![0].main.toString()] ??
+                    "assets/img/clear.png",
               ),
             ),
             Align(
               alignment: const Alignment(0, 0),
               child: SizedBox(
-                height: 130,
+                height: 160,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
-                      "21 C",
-                      style: TextStyle(
+                    Text(
+                      "${weatherProvider.weather!.main!.temp.toString()}\u00b0 C",
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 34,
                       ),
                     ),
-                    const Text(
-                      "Snow",
-                      style: TextStyle(
+                    Text(
+                      "${weatherProvider.weather!.name}",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 28,
+                      ),
+                    ),
+                    Text(
+                      weatherProvider.weather!.weather![0].main.toString(),
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
                         fontSize: 26,
                       ),
                     ),
                     Text(
-                      DateTime.now().toString(),
+                      DateFormat('hh:mm a').format(DateTime.now()),
                       style: const TextStyle(color: Colors.white),
                     )
                   ],
@@ -193,11 +243,11 @@ class _HomePageState extends State<HomePage> {
                               "assets/img/temperature-high.png",
                               height: 65,
                             ),
-                            const Column(
+                            Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
+                                const Text(
                                   "Temp Max",
                                   style: TextStyle(
                                       fontSize: 14,
@@ -205,8 +255,8 @@ class _HomePageState extends State<HomePage> {
                                       color: Colors.white),
                                 ),
                                 Text(
-                                  "21C",
-                                  style: TextStyle(
+                                  "${weatherProvider.weather?.main!.tempMax!.toStringAsFixed(0)}\u00b0 C",
+                                  style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.white),
@@ -224,20 +274,20 @@ class _HomePageState extends State<HomePage> {
                               "assets/img/temperature-low.png",
                               height: 65,
                             ),
-                            const Column(
+                            Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  "Temp low",
+                                const Text(
+                                  "Temp Min",
                                   style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.white),
                                 ),
                                 Text(
-                                  "21C",
-                                  style: TextStyle(
+                                  "${weatherProvider.weather?.main!.tempMin!.toStringAsFixed(0)}\u00b0 C",
+                                  style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.white),
@@ -263,11 +313,11 @@ class _HomePageState extends State<HomePage> {
                               "assets/img/sun (1).png",
                               height: 65,
                             ),
-                            const Column(
+                            Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
+                                const Text(
                                   "Sunrise",
                                   style: TextStyle(
                                       fontSize: 14,
@@ -275,8 +325,8 @@ class _HomePageState extends State<HomePage> {
                                       color: Colors.white),
                                 ),
                                 Text(
-                                  "21C",
-                                  style: TextStyle(
+                                  "${formattedSunrise} AM",
+                                  style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.white),
@@ -294,11 +344,11 @@ class _HomePageState extends State<HomePage> {
                               "assets/img/moon.png",
                               height: 65,
                             ),
-                            const Column(
+                            Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
+                                const Text(
                                   "Sunset",
                                   style: TextStyle(
                                       fontSize: 14,
@@ -306,8 +356,8 @@ class _HomePageState extends State<HomePage> {
                                       color: Colors.white),
                                 ),
                                 Text(
-                                  "21C",
-                                  style: TextStyle(
+                                  "${formattedSunset} PM",
+                                  style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.white),
