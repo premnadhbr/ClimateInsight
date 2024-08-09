@@ -17,17 +17,13 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
-    final locationProvider =
-        Provider.of<LocationProvider>(context, listen: false);
-
+    final locationProvider = Provider.of<LocationProvider>(context, listen: false);
     locationProvider.determineLocation().then((_) {
       var city = locationProvider.currentLocationName!.locality;
       if (city != null) {
-        Provider.of<WeatherServiceProvider>(context, listen: false)
-            .fetchWeatherDataByCity(city);
+        Provider.of<WeatherServiceProvider>(context, listen: false).fetchWeatherDataByCity(city);
       }
     });
-
     super.initState();
   }
 
@@ -42,26 +38,19 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final weatherProvider =
-        Provider.of<WeatherServiceProvider>(context, listen: false);
+    final weatherProvider = Provider.of<WeatherServiceProvider>(context, listen: false);
 
-    // Ensure weather data is not null before accessing its properties
     final weather = weatherProvider.weather;
     final weatherDetails = weather?.weather?.first;
     final mainWeather = weather?.main;
     final sys = weather?.sys;
 
-    // Get the sunrise and sunset timestamps from the API response, default to 0 if null
     int sunriseTimestamp = sys?.sunrise ?? 0;
     int sunsetTimestamp = sys?.sunset ?? 0;
 
-    // Convert the timestamp to a DateTime object
-    DateTime sunriseDateTime =
-        DateTime.fromMillisecondsSinceEpoch(sunriseTimestamp * 1000);
-    DateTime sunsetDateTime =
-        DateTime.fromMillisecondsSinceEpoch(sunsetTimestamp * 1000);
+    DateTime sunriseDateTime = DateTime.fromMillisecondsSinceEpoch(sunriseTimestamp * 1000);
+    DateTime sunsetDateTime = DateTime.fromMillisecondsSinceEpoch(sunsetTimestamp * 1000);
 
-    // Format the sunrise and sunset times as strings
     String formattedSunrise = DateFormat.Hm().format(sunriseDateTime);
     String formattedSunset = DateFormat.Hm().format(sunsetDateTime);
 
@@ -75,46 +64,12 @@ class _HomePageState extends State<HomePage> {
         width: size.width,
         decoration: BoxDecoration(
           image: DecorationImage(
-              image: AssetImage(
-                background[
-                        weatherProvider.weather!.weather![0].main.toString()] ??
-                    "assets/img/clear.png",
-              ),
+              image: AssetImage(background[weatherProvider.weather?.weather?.first.main?.toString() ?? 'Clear'] ?? "assets/img/clear.jpg"),
               fit: BoxFit.cover),
         ),
         child: Stack(
           children: [
-            if (clicked)
-              Positioned(
-                top: 60,
-                left: 20,
-                right: 20,
-                child: SizedBox(
-                  height: 45,
-                  child: TextFormField(
-                    controller: cityController,
-                    decoration: InputDecoration(
-                      suffixIcon: IconButton(
-                        onPressed: () {
-                          weatherProvider
-                              .fetchWeatherDataByCity(cityController.text);
-                        },
-                        icon: const Icon(
-                          Icons.search,
-                          color: Colors.white,
-                          size: 25,
-                        ),
-                      ),
-                      enabledBorder: const UnderlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white),
-                      ),
-                      focusedBorder: const OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+            if (clicked) Positioned(top: 60, left: 20, right: 20, child: SizedBox(height: 45, child: TextFormField(controller: cityController, decoration: InputDecoration(suffixIcon: IconButton(onPressed: () => weatherProvider.fetchWeatherDataByCity(cityController.text), icon: const Icon(Icons.search, color: Colors.white, size: 25)), enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)), focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.white))),))),
             SizedBox(
               height: 50,
               child: Consumer<LocationProvider>(
@@ -180,9 +135,7 @@ class _HomePageState extends State<HomePage> {
             Align(
               alignment: const Alignment(0, -0.7),
               child: Image.asset(
-                imagePath[
-                        weatherProvider.weather!.weather![0].main.toString()] ??
-                    "assets/img/clear.png",
+                imagePath[weatherProvider.weather?.weather?.first.main?.toString() ?? 'Clear'] ?? "assets/img/clear.png",
               ),
             ),
             Align(
@@ -193,7 +146,7 @@ class _HomePageState extends State<HomePage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      "${weatherProvider.weather!.main!.temp.toString()}\u00b0 C",
+                      "${weatherProvider.weather?.main?.temp?.toString() ?? '--'}\u00b0 C",
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -201,7 +154,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                     Text(
-                      "${weatherProvider.weather!.name}",
+                      weatherProvider.weather?.name ?? 'Unknown',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -209,7 +162,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                     Text(
-                      weatherProvider.weather!.weather![0].main.toString(),
+                      weatherProvider.weather?.weather?.first.main.toString() ?? 'Clear',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
@@ -217,7 +170,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                     Text(
-                      DateFormat('hh:mm a').format(DateTime.now()),
+                      DateFormat.jm().format(DateTime.now()),
                       style: const TextStyle(color: Colors.white),
                     )
                   ],
@@ -255,7 +208,7 @@ class _HomePageState extends State<HomePage> {
                                       color: Colors.white),
                                 ),
                                 Text(
-                                  "${weatherProvider.weather?.main!.tempMax!.toStringAsFixed(0)}\u00b0 C",
+                                  "${weatherProvider.weather?.main!.tempMax!.toStringAsFixed(0) ?? '--'}\u00b0 C",
                                   style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
@@ -286,7 +239,7 @@ class _HomePageState extends State<HomePage> {
                                       color: Colors.white),
                                 ),
                                 Text(
-                                  "${weatherProvider.weather?.main!.tempMin!.toStringAsFixed(0)}\u00b0 C",
+                                  "${weatherProvider.weather?.main!.tempMin!.toStringAsFixed(0) ?? '--'}\u00b0 C",
                                   style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
